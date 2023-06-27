@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Камера и запись видео на устройстве</title>
+  </head>
+  <body>
+    <h1>Камера и запись видео</h1>
+    <div>
+      <video id="video" height="720"></video>
+    </div>
+    <button id="record">Записать</button>
+    <script>
+      // Получаем элементы на странице и устанавливаем конфигурацию камеры
+      const video = document.getElementById('video');
+      const recordButton = document.getElementById('record');
+    
+      navigator.mediaDevices.getUserMedia({video: true})
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+        })
+        .catch(console.error);
+    
+      // Обработчик нажатия на кнопку записи
+      let mediaRecorder = null;
+    
+      recordButton.addEventListener('click', () => {
+        if (mediaRecorder) {
+          mediaRecorder.stop();
+          mediaRecorder = null;
+          
+          recordButton.textContent = 'Записать';
+        } else {
+          mediaRecorder = new MediaRecorder(video.srcObject);
+          const chunks = [];
+    
+          // Сохраняем запись после остановки
+          mediaRecorder.addEventListener('dataavailable', event => {
+            chunks.push(event.data);
+          });
+    
+          mediaRecorder.addEventListener('stop', () => {
+            const recording = new Blob(chunks, { 'type' : 'video/webm' });
+    
+            const videoURL = URL.createObjectURL(recording);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = videoURL;
+            downloadLink.download = `recording-${Date.now()}.webm`;
+            downloadLink.click();
+    
+            URL.revokeObjectURL(videoURL);
+            
+            recordButton.textContent = 'Записать';
+          });
+    
+          mediaRecorder.start();
+    
+          recordButton.textContent = 'Остановить';
+        }
+      });
+    </script>
+  </body>
+</html>
